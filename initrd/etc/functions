@@ -78,20 +78,22 @@ confirm_totp()
 	echo
 }
 
-enable_usb()
+confirm_gpg_card()
 {
-	if ! lsmod | grep -q uhci_hcd; then
-		insmod /lib/modules/uhci-hcd.ko \
-		|| die "ehci_hcd: module load failed"
+	read \
+		-n 1 \
+		-p "Please confirm that your GPG card is inserted [Y/n]: " \
+		card_confirm
+	echo
+
+	if [ "$card_confirm" != "y" \
+		-a "$card_confirm" != "Y" \
+		-a -n "$card_confirm" ] \
+	; then
+		die "gpg card not confirmed"
 	fi
-	if ! lsmod | grep -q ohci_hcd; then
-		insmod /lib/modules/ohci-hcd.ko \
-		|| die "ehci_hcd: module load failed"
-	fi
-	if ! lsmod | grep -q ohci_pci; then
-		insmod /lib/modules/ohci-pci.ko \
-		|| die "ehci_pci: module load failed"
-	fi
+
+	# setup the USB so we can reach the GPG card
 	if ! lsmod | grep -q ehci_hcd; then
 		insmod /lib/modules/ehci-hcd.ko \
 		|| die "ehci_hcd: module load failed"
@@ -109,25 +111,6 @@ enable_usb()
 		|| die "ehci_pci: module load failed"
 		sleep 2
 	fi
-}
-
-confirm_gpg_card()
-{
-	read \
-		-n 1 \
-		-p "Please confirm that your GPG card is inserted [Y/n]: " \
-		card_confirm
-	echo
-
-	if [ "$card_confirm" != "y" \
-		-a "$card_confirm" != "Y" \
-		-a -n "$card_confirm" ] \
-	; then
-		die "gpg card not confirmed"
-	fi
-
-	# setup the USB so we can reach the GPG card
-	enable_usb
 
 	gpg --card-status \
 	|| die "gpg card read failed"
